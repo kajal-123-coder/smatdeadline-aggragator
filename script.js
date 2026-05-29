@@ -303,4 +303,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         modal.classList.remove('hidden');
     }
+// Theme Toggle
+document.getElementById('theme-toggle').onclick = () => {
+    document.body.classList.toggle('light-theme');
+    const icon = document.querySelector('#theme-toggle i');
+    if (document.body.classList.contains('light-theme')) {
+        icon.setAttribute('data-lucide', 'moon');
+    } else {
+        icon.setAttribute('data-lucide', 'sun');
+    }
+    lucide.createIcons();
+};
 });
