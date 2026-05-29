@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Deadline - Task Intelligence Panel</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Flatpickr (Professional Calendar) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+</head>
+<body class="dark-theme">
+    <div id="app" class="glass-container">
+        
+        <!-- Intro / Landing Portal -->
+        <div id="intro-screen" class="screen" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 2rem;">
+            <div class="logo" style="justify-content: center; font-size: 3.5rem; margin-bottom: 1.5rem;">
+                <i data-lucide="shield-check" style="width: 60px; height: 60px; color: var(--primary-light);"></i>
+                <span style="color: var(--primary-light);">SmartDeadline</span>
+            </div>
+            <h1 style="font-family: 'Outfit'; font-size: 3.5rem; margin-bottom: 1rem; line-height: 1.2;">Master Your Targets with<br><span style="background: linear-gradient(to right, #a855f7, #00d2ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Absolute Precision</span></h1>
+            <p style="color: var(--text-dim); font-size: 1.2rem; max-width: 650px; margin-bottom: 3rem;">A sophisticated operational dashboard with intelligent priority calculation, professional analytics, and high-level strategy tools.</p>
+            <button id="enter-portal-btn" class="primary-btn" style="font-size: 1.1rem; padding: 1rem 2.5rem; border-radius: 30px;">Initialize Experience <i data-lucide="arrow-right"></i></button>
+        </div>
+
+        <!-- Login / Registration Portal -->
+        <div id="auth-screen" class="screen hidden">
+            <header style="margin-bottom: 2.5rem; text-align: center;">
+                <div class="logo" style="justify-content: center; font-size: 2rem;">
+                    <i data-lucide="shield-check" style="width: 40px; height: 40px;"></i>
+                    <span>SmartDeadline</span>
+                </div>
+                <p style="color: var(--text-dim); margin-top: 0.5rem;">Access your operational objectives</p>
+            </header>
+            <div class="auth-card glass">
+                <div class="tabs">
+                    <button id="login-tab" class="active">Login</button>
+                    <button id="signup-tab">Sign Up</button>
+                </div>
+                <form id="auth-form">
+                    <div class="input-group">
+                        <label>Username</label>
+                        <input type="text" id="username" placeholder="Identity name" required>
+                    </div>
+                    <div id="email-group" class="input-group hidden">
+                        <label>Contact Email</label>
+                        <input type="email" id="email" placeholder="mail@example.com">
+                    </div>
+                    <div class="input-group">
+                        <label>Password</label>
+                        <input type="password" id="password" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" id="auth-submit" class="primary-btn">Initialize Access</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Dashboard Screen -->
+        <div id="main-screen" class="screen hidden">
+            <nav class="dashboard-nav glass">
+                <div class="nav-left">
+                    <div class="logo"><i data-lucide="activity"></i><span>DASHBOARD</span></div>
+                </div>
+                <div class="nav-right">
+                    <button id="theme-toggle" class="icon-btn"><i data-lucide="sun"></i></button>
+                    <div class="user-profile">
+                        <span id="display-username">User</span>
+                        <button id="logout-btn" class="icon-btn logout-accent" title="Logout"><i data-lucide="log-out"></i></button>
+                    </div>
+                </div>
+            </nav>
+
+            <main class="dashboard-grid">
+                <!-- Analysis -->
+                <div class="card glass analytics-column">
+                    <h3>Priority Snapshot</h3>
+                    <div class="chart-wrapper"><canvas id="priorityChart"></canvas></div>
+                </div>
+                
+                <div class="card glass bar-column">
+                    <h3>Sector distribution</h3>
+                    <div class="chart-wrapper"><canvas id="categoryChart"></canvas></div>
+                </div>
+
+                <div class="card glass summary-column">
+                    <h3>Telemetry Summary</h3>
+                    <div class="summary-list">
+                        <div class="stat-pill high">
+                            <span class="count" id="count-high">0</span>
+                            <span class="label">Critical</span>
+                        </div>
+                        <div class="stat-pill medium">
+                            <span class="count" id="count-medium">0</span>
+                            <span class="label">Warning</span>
+                        </div>
+                        <div class="stat-pill low">
+                            <span class="count" id="count-low">0</span>
+                            <span class="label">Stable</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Manager -->
+                <div class="card glass task-manager-card">
+                    <div class="card-header-flex">
+                        <h3>Active Inventory</h3>
+                        <button id="add-task-btn" class="primary-btn sm"><i data-lucide="plus"></i> New Task</button>
+                    </div>
+
+                    <div class="task-table-wrapper">
+                        <div class="filters-bar glass">
+                            <input type="text" id="search-tasks" placeholder="Search objectives...">
+                            <select id="filter-priority">
+                                <option value="all">Priority: All</option>
+                                <option value="High">High</option>
+                                <option value="Medium">Medium</option>
+                                <option value="Low">Low</option>
+                            </select>
+                        </div>
+                        <div class="task-header-row">
+                            <span>SLA</span> <span>Description</span> <span>Sector</span> <span>Target</span> <span>TTL</span> <span>Actions</span>
+                        </div>
+                        <ul id="task-list"></ul>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Goal Modal -->
+        <div id="task-modal" class="modal hidden">
+            <div class="modal-content glass">
+                <h3>Log New Objective</h3>
+                <form id="task-form">
+                    <div class="input-group"><label>Objective</label><input type="text" id="task-title" required></div>
+                    <div class="row">
+                        <div class="input-group"><label>Sector</label><select id="task-category">
+                            <option value="Personal">Personal</option>
+                            <option value="Event">Event</option>
+                            <option value="Urgent">Urgent</option>
+                            <option value="Meetings">Meetings</option>
+                            <option value="Assignments">Assignments</option>
+                            <option value="Other">Other</option>
+                        </select></div>
+                        <div class="input-group"><label>Target Date</label><input type="text" id="task-date" placeholder="Select Date (YYYY-MM-DD)" required></div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" id="cancel-task" class="secondary-btn">Abort</button>
+                        <button type="submit" class="primary-btn">Initialize Log</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Global Notification Modal -->
+        <div id="notification-modal" class="modal hidden" style="z-index: 9999;">
+            <div id="notification-content" class="modal-content glass" style="text-align: center; padding: 2.5rem; max-width: 420px; border-top: 4px solid var(--primary-light);">
+                <i id="notification-icon" data-lucide="info" style="color: var(--primary-light); width: 56px; height: 56px; margin: 0 auto 1.5rem auto;"></i>
+                <h3 id="notification-title" style="margin-bottom: 1rem; color: var(--primary-light); font-size: 1.5rem;">System Notice</h3>
+                <p id="notification-message" style="font-size: 1rem; color: var(--text-dim); margin-bottom: 2rem;">Information updated.</p>
+                <button class="primary-btn" style="width: 100%;" onclick="document.getElementById('notification-modal').classList.add('hidden')">Acknowledge</button>
+            </div>
+        </div>
+        
+        <audio id="notification-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+        <div id="toast-container"></div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+[
+    {
+        "id": 1,
+        "username": "2023d2r013",
+        "email": "kajalpandita245@gmail.com",
+        "tasks": [
+            {
+                "id": 3,
+                "user_id": 1,
+                "title": "fee submission",
+                "category": "Urgent",
+                "date": "2026-04-30",
+                "priority": "Medium",
+                "completed": 0
+            }
+        ]
+    }
+]
