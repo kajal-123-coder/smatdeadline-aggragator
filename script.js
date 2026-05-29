@@ -3,7 +3,7 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-    const API_BASE_URL = 'http://localhost:5000/api';
+    const API_BASE_URL = 'https://smart-deadline-app.onrender.com/api';
     
     let currentUser = JSON.parse(localStorage.getItem('smartDeadline_currentUser')) || null;
     let authToken = localStorage.getItem('smartDeadline_token') || null;
