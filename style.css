@@ -221,3 +221,14 @@ input:focus, select:focus { border-color: var(--primary-light); box-shadow: 0 0 
     .analytics-column, .bar-column, .summary-column { grid-column: span 12; }
     .row { grid-template-columns: 1fr; }
 }
+.light-theme {
+    --bg-dark: #f3f4f6;
+    --card-bg: rgba(255, 255, 255, 0.9);
+    --text-main: #111827;
+    --text-dim: #6b7280;
+    --glass-border: rgba(0, 0, 0, 0.1);
+}
+
+.light-theme body {
+    background-color: #f3f4f6;
+}
