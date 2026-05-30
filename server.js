@@ -5,23 +5,11 @@ const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cron = require('node-cron');
-
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'smartdeadline_secret_key_change_this';
-const nodemailer = require('nodemailer');
-const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT,
-    secure: false,
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-    }
-});
-const FROM_EMAIL = process.env.FROM_EMAIL || process.env.GMAIL_USER;
 
 // ─── Middleware ────────────────────────────────────────────────────────────────
 app.use(cors());
@@ -128,7 +116,6 @@ app.get('/api/admin/all-data', (req, res) => {
     db.all('SELECT id, username, email FROM users', [], (err, users) => {
         if (err) return res.status(500).json({ error: 'Failed to fetch users' });
         if (!users.length) return res.json([]);
-
         db.all('SELECT * FROM tasks', [], (err, tasks) => {
             if (err) return res.status(500).json({ error: 'Failed to fetch tasks' });
             const result = users.map(u => ({
@@ -140,19 +127,43 @@ app.get('/api/admin/all-data', (req, res) => {
     });
 });
 
+// ─── Brevo API Email Function ──────────────────────────────────────────────────
+async function sendBrevoEmail(toEmail, subject, htmlBody) {
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'api-key': process.env.BREVO_API_KEY
+        },
+        body: JSON.stringify({
+            sender: { email: process.env.SMTP_USER, name: 'SmartDeadline' },
+            to: [{ email: toEmail }],
+            subject: subject,
+            htmlContent: htmlBody
+        })
+    });
+    if (!response.ok) {
+        const err = await response.text();
+        throw new Error(err);
+    }
+    return response.json();
+}
+
 // ─── Email Reminder Function ───────────────────────────────────────────────────
 async function sendEmailReminders() {
     console.log('📧 Running email reminder job...');
 
     db.all('SELECT id, username, email FROM users WHERE email IS NOT NULL AND email != ""', [], (err, users) => {
-        if (err || !users.length) return;
+        if (err || !users.length) {
+            console.log('No users with email found');
+            return;
+        }
 
         users.forEach(user => {
             db.all('SELECT * FROM tasks WHERE user_id = ? AND completed = 0 ORDER BY date ASC', [user.id], async (err, tasks) => {
                 if (err || !tasks.length) return;
 
                 const today = new Date().toISOString().split('T')[0];
-
                 const todayTasks = tasks.filter(t => t.date === today);
                 const overdueTasks = tasks.filter(t => t.date < today);
                 const upcomingTasks = tasks.filter(t => t.date > today);
@@ -176,80 +187,64 @@ async function sendEmailReminders() {
                 <head><meta charset="UTF-8"></head>
                 <body style="margin:0; padding:0; background:#07090f; font-family:'Inter',sans-serif;">
                     <div style="max-width:620px; margin:30px auto; background:#0d1117; border-radius:20px; overflow:hidden; border:1px solid #1f2937;">
-                        
-                        <!-- Header -->
                         <div style="background:linear-gradient(135deg,#8a2be2,#a855f7); padding:32px; text-align:center;">
-                            <h1 style="margin:0; color:white; font-size:24px; font-weight:800; letter-spacing:1px;">⚡ SmartDeadline</h1>
+                            <h1 style="margin:0; color:white; font-size:24px; font-weight:800;">⚡ SmartDeadline</h1>
                             <p style="margin:8px 0 0; color:rgba(255,255,255,0.8); font-size:14px;">Daily Task Intelligence Report</p>
                         </div>
-
-                        <!-- Greeting -->
                         <div style="padding:28px 32px 0;">
                             <p style="color:#f3f4f6; font-size:16px; margin:0;">Hey <strong style="color:#a855f7;">${user.username}</strong> 👋</p>
                             <p style="color:#9ca3af; font-size:14px; margin:8px 0 0;">Here's your operational status for today.</p>
                         </div>
-
-                        <!-- Stats Bar -->
                         <div style="display:flex; gap:12px; padding:20px 32px; flex-wrap:wrap;">
                             <div style="flex:1; min-width:100px; background:#1a1a2e; border-radius:12px; padding:14px; text-align:center; border:1px solid #2d2d44;">
                                 <div style="font-size:28px; font-weight:800; color:#ef4444;">${todayTasks.length}</div>
-                                <div style="font-size:11px; color:#9ca3af; margin-top:4px; text-transform:uppercase;">Due Today</div>
+                                <div style="font-size:11px; color:#9ca3af; margin-top:4px;">DUE TODAY</div>
                             </div>
                             <div style="flex:1; min-width:100px; background:#1a1a2e; border-radius:12px; padding:14px; text-align:center; border:1px solid #2d2d44;">
                                 <div style="font-size:28px; font-weight:800; color:#f97316;">${overdueTasks.length}</div>
-                                <div style="font-size:11px; color:#9ca3af; margin-top:4px; text-transform:uppercase;">Overdue</div>
+                                <div style="font-size:11px; color:#9ca3af; margin-top:4px;">OVERDUE</div>
                             </div>
                             <div style="flex:1; min-width:100px; background:#1a1a2e; border-radius:12px; padding:14px; text-align:center; border:1px solid #2d2d44;">
                                 <div style="font-size:28px; font-weight:800; color:#a855f7;">${upcomingTasks.length}</div>
-                                <div style="font-size:11px; color:#9ca3af; margin-top:4px; text-transform:uppercase;">Upcoming</div>
+                                <div style="font-size:11px; color:#9ca3af; margin-top:4px;">UPCOMING</div>
                             </div>
                         </div>
-
-                        <!-- Due Today Alert -->
                         ${todayTasks.length > 0 ? `
                         <div style="margin:0 32px; background:#1c0a0a; border:1px solid #ef4444; border-radius:12px; padding:16px 20px;">
-                            <p style="margin:0 0 10px; color:#ef4444; font-weight:700; font-size:13px;">🚨 DUE TODAY — ACTION REQUIRED</p>
+                            <p style="margin:0 0 10px; color:#ef4444; font-weight:700; font-size:13px;">🚨 DUE TODAY</p>
                             <table style="width:100%; border-collapse:collapse;">${taskRows(todayTasks)}</table>
                         </div>` : ''}
-
-                        <!-- Overdue Warning -->
                         ${overdueTasks.length > 0 ? `
                         <div style="margin:16px 32px 0; background:#1a0e00; border:1px solid #f97316; border-radius:12px; padding:16px 20px;">
-                            <p style="margin:0 0 10px; color:#f97316; font-weight:700; font-size:13px;">⚠️ OVERDUE TASKS</p>
+                            <p style="margin:0 0 10px; color:#f97316; font-weight:700; font-size:13px;">⚠️ OVERDUE</p>
                             <table style="width:100%; border-collapse:collapse;">${taskRows(overdueTasks)}</table>
                         </div>` : ''}
-
-                        <!-- Upcoming Tasks -->
                         ${upcomingTasks.length > 0 ? `
                         <div style="margin:16px 32px 0; padding:16px 20px;">
-                            <p style="margin:0 0 10px; color:#9ca3af; font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:0.1em;">📋 Upcoming Tasks</p>
+                            <p style="margin:0 0 10px; color:#9ca3af; font-weight:700; font-size:13px;">📋 UPCOMING TASKS</p>
                             <table style="width:100%; border-collapse:collapse; background:#111827; border-radius:12px; overflow:hidden;">
                                 <tr style="background:#1f2937;">
-                                    <th style="padding:10px 12px; text-align:left; color:#6b7280; font-size:11px; text-transform:uppercase;">Priority</th>
-                                    <th style="padding:10px 12px; text-align:left; color:#6b7280; font-size:11px; text-transform:uppercase;">Task</th>
-                                    <th style="padding:10px 12px; text-align:left; color:#6b7280; font-size:11px; text-transform:uppercase;">Sector</th>
-                                    <th style="padding:10px 12px; text-align:left; color:#6b7280; font-size:11px; text-transform:uppercase;">Deadline</th>
+                                    <th style="padding:10px 12px; text-align:left; color:#6b7280; font-size:11px;">Priority</th>
+                                    <th style="padding:10px 12px; text-align:left; color:#6b7280; font-size:11px;">Task</th>
+                                    <th style="padding:10px 12px; text-align:left; color:#6b7280; font-size:11px;">Sector</th>
+                                    <th style="padding:10px 12px; text-align:left; color:#6b7280; font-size:11px;">Deadline</th>
                                 </tr>
                                 ${taskRows(upcomingTasks)}
                             </table>
                         </div>` : ''}
-
-                        <!-- Footer -->
                         <div style="margin:24px 32px 32px; text-align:center; padding-top:20px; border-top:1px solid #1f2937;">
                             <p style="color:#4b5563; font-size:12px; margin:0;">SmartDeadline — Task Intelligence Platform</p>
-                            <p style="color:#374151; font-size:11px; margin:4px 0 0;">You're receiving this because you registered with this email.</p>
                         </div>
                     </div>
                 </body>
                 </html>`;
 
                 try {
-                    await transporter.sendMail({
-                        from: FROM_EMAIL,
-                        to: user.email,
-                        subject: `⚡ SmartDeadline: ${todayTasks.length > 0 ? `🚨 ${todayTasks.length} task(s) due TODAY` : `${tasks.length} active objective(s)`}`,
-                        html: htmlBody
-                    });
+                    await sendBrevoEmail(
+                        user.email,
+                        `⚡ SmartDeadline: ${todayTasks.length > 0 ? `🚨 ${todayTasks.length} task(s) due TODAY` : `${tasks.length} active objective(s)`}`,
+                        htmlBody
+                    );
                     console.log(`✅ Email sent to ${user.email}`);
                 } catch (e) {
                     console.error(`❌ Email failed for ${user.email}:`, e.message);
@@ -259,15 +254,12 @@ async function sendEmailReminders() {
     });
 }
 
-// ─── Cron Schedule: 8AM | 2PM | 8PM (IST = UTC+5:30) ─────────────────────────
-// IST 8:00 AM  = UTC 2:30 AM  → cron: '30 2 * * *'
-// IST 2:00 PM  = UTC 8:30 AM  → cron: '30 8 * * *'
-// IST 8:00 PM  = UTC 2:30 PM  → cron: '30 14 * * *'
+// ─── Cron Schedule ─────────────────────────────────────────────────────────────
 cron.schedule('30 2 * * *', sendEmailReminders, { timezone: 'Asia/Kolkata' });
 cron.schedule('30 8 * * *', sendEmailReminders, { timezone: 'Asia/Kolkata' });
 cron.schedule('30 14 * * *', sendEmailReminders, { timezone: 'Asia/Kolkata' });
 
-// ─── Manual Trigger Route (for testing) ───────────────────────────────────────
+// ─── Manual Trigger ────────────────────────────────────────────────────────────
 app.post('/api/admin/send-reminders-now', async (req, res) => {
     sendEmailReminders();
     res.json({ message: '📧 Email reminders triggered manually!' });
@@ -283,4 +275,3 @@ app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
     console.log(`📧 Email reminders scheduled: 8:00 AM | 2:00 PM | 8:00 PM (IST)`);
 });
-
