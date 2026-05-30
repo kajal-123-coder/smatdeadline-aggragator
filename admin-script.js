@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const totalTasksVal = document.getElementById('total-tasks-val');
 
     try {
-        const resp = await fetch('https://smatdeadline-aggragator.onrender.com');
+        const resp = await fetch('https://smatdeadline-aggragator.onrender.com/api/admin/all-data');
         const data = await resp.json();
 
         if (data.length === 0) {
@@ -44,6 +44,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         `).join('');
         lucide.createIcons();
     } catch (err) {
-        content.innerHTML = '<p class="empty-state" style="color: #ff4d4d;">Failed to connect to the server. Make sure the backend is running!</p>';
+        content.innerHTML = '<p class="empty-state" style="color: #ff4d4d;">Failed to connect to the server!</p>';
     }
 });

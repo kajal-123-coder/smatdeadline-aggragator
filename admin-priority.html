@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Panel | Smart Deadline</title>
+    <title>Priority View | Admin Panel</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -10,23 +10,22 @@
     <div class="glass-container">
         <header class="glass" style="padding: 1rem 2rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
             <div class="logo">
-                <i data-lucide="shield-check"></i>
-                <span>Admin Master Dashboard</span>
+                <i data-lucide="layout-grid"></i>
+                <span>Tasks by Priority</span>
             </div>
             <div style="display: flex; gap: 1rem;">
-                <h4 id="total-users-val" style="margin-right: 15px;">Users: 0</h4>
-                <h4 id="total-tasks-val">Tasks: 0</h4>
-                <a href="index.html" class="secondary-btn" style="text-decoration: none; margin-left: 20px;">Back to App</a>
+                <a href="admin.html" class="secondary-btn" style="text-decoration: none;">User View</a>
+                <a href="index.html" class="secondary-btn" style="text-decoration: none;">Back to App</a>
             </div>
         </header>
 
         <main class="card glass">
-            <h3>All Registered Users & Tasks</h3>
-            <div id="admin-content">
-                <p>Loading database records...</p>
+            <h3>Global Task Priority Matrix</h3>
+            <div id="priority-content">
+                <p>Analyzing priorities...</p>
             </div>
         </main>
     </div>
-    <script src="admin-script.js"></script>
+    <script src="admin-priority-script.js"></script>
 </body>
 </html>
