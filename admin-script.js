@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const totalTasksVal = document.getElementById('total-tasks-val');
 
     try {
-        const resp = await fetch('http://localhost:5000/api/admin/all-data');
+        const resp = await fetch('https://smatdeadline-aggragator.onrender.com');
         const data = await resp.json();
 
         if (data.length === 0) {
